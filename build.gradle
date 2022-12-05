@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.0.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    //id 'com.google.cloud.tools.jib' version '3.2.1'
+}
+
+group = 'io.optimogroup.xracoon-user'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url 'http://35.156.90.23:8080/repository/racoon/'
+        allowInsecureProtocol = true
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'com.sendgrid:sendgrid-java:4.0.1'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+//    implementation group: 'org.apache.poi', name: 'poi', version: '4.1.1'
+    implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '4.1.1'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
+    implementation group: 'com.googlecode.log4jdbc', name: 'log4jdbc', version: '1.2'
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.9'
+    implementation group: 'biz.paluch.logging', name: 'logstash-gelf', version: '1.15.0'
+    implementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '1.7.36'
+    implementation group: 'org.slf4j', name: 'log4j-over-slf4j', version: '1.7.36'
+
+    compileOnly 'org.projectlombok:lombok'
+//    annotationProcessor 'org.hibernate:hibernate-jpamodelgen'
+    runtimeOnly 'com.oracle.database.jdbc:ojdbc8'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test',
+            implementation('io.optimogroup.xracoon.shared:xracoon-shared-models:0.0.5-SNAPSHOT') {
+                changing = true
+            }
+    implementation('io.optimogroup.xracoon.shared.s3:xracoon-s3-shared-client:0.0.6-SNAPSHOT') {
+        changing = true
+    }
+    implementation('io.optimogroup.xracoon.shared.registry:xracoon-registry-shared-client:0.0.5-SNAPSHOT')
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
