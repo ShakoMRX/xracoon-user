@@ -1,10 +1,11 @@
 package io.optimogroup.xracoonuser.xracoonuser.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
-@org.springframework.context.annotation.Configuration
+@AutoConfiguration
 public class Configuration {
 
     @Bean

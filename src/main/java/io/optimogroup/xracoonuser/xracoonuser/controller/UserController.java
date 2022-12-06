@@ -1,15 +1,16 @@
 package io.optimogroup.xracoonuser.xracoonuser.controller;
 
 import io.optimogroup.xracoon.shared.models.BaseException;
+import io.optimogroup.xracoonuser.xracoonuser.dto.RatingDto;
+import io.optimogroup.xracoonuser.xracoonuser.repository.RatingRepository;
 import io.optimogroup.xracoonuser.xracoonuser.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -17,11 +18,27 @@ import java.io.IOException;
 public class UserController {
 
     private final UserService userService;
+    private final RatingRepository repository;
 
 
     @GetMapping("detail-info")
     public ResponseEntity<?> getUserDetailInfo() throws BaseException, IOException {
         return new ResponseEntity<>(userService.getUserDetails(), HttpStatus.OK);
+    }
+
+    @GetMapping("point-transactions/{partyId}")
+    public ResponseEntity<?> getUserPointTransactions(@PathVariable Long partyId) {
+        return new ResponseEntity<>(userService.getUserPointTransactions(partyId), HttpStatus.OK);
+    }
+
+    @PostMapping
+    public void saveRating(@RequestBody RatingDto ratingDto) {
+        repository.save(ratingDto);
+    }
+
+    @GetMapping
+    private List<RatingDto> get() {
+       return repository.findAll();
     }
 
 }

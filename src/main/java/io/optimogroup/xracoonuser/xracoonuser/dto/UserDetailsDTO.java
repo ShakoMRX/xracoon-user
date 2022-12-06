@@ -32,6 +32,4 @@ public class UserDetailsDTO implements Serializable {
     private String objectType;
     private String registryType;
 
-    private AccountDetail accountDetails;
-
 }

@@ -1,15 +1,13 @@
 package io.optimogroup.xracoonuser.xracoonuser.service.user;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.optimogroup.xracoon.shared.models.BaseException;
 import io.optimogroup.xracoon.shared.s3.client.exception.BadRequestException;
 import io.optimogroup.xracoonuser.xracoonuser.Utils.RequestUtils;
-import io.optimogroup.xracoonuser.xracoonuser.dto.AccountDetail;
-import io.optimogroup.xracoonuser.xracoonuser.dto.PointsDTO;
-import io.optimogroup.xracoonuser.xracoonuser.dto.UserDTO;
-import io.optimogroup.xracoonuser.xracoonuser.dto.UserDetailsDTO;
+import io.optimogroup.xracoonuser.xracoonuser.dto.*;
 import io.optimogroup.xracoonuser.xracoonuser.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +27,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -68,13 +68,42 @@ public class UserServiceImpl implements UserService {
         UserDTO userDTO = new UserDTO();
         try {
             Long partyId = getUserDetailsFromRegistry(userDTO);
-            AccountDetail accountDetail = getAccountingDetails(partyId);
-            userDTO.setAccountDetail(accountDetail);
+//            AccountDetail accountDetail = getAccountingDetails(partyId);
+//            userDTO.setAccountDetail(accountDetail);
             return userDTO;
         } catch (Exception e) {
             e.printStackTrace();
             log.info("Unknown error while retrieve userDetail info from registry");
             throw new BusinessException("Unknown error while retrieve userDetail info from registry");
+        }
+    }
+
+    @Override
+    public List<PointsTransactionDTO> getUserPointTransactions(Long partyId) {
+        if (partyId == null) throw new BusinessException("Invalid party id provided!");
+        try {
+            UriComponentsBuilder accountingUriBuilder = UriComponentsBuilder
+                    .fromHttpUrl(accountingHost + "/" + accountingUri);
+            var pointTransactions = RequestUtils.ServiceCall(
+                    log,
+                    restTemplate,
+                    objectMapper,
+                    "get user pointTransactions",
+                    accountingUriBuilder
+                            .encode()
+                            .toUriString() + "/contracts/point-transactions/" + partyId,
+                    HttpMethod.GET,
+                    HttpEntity.EMPTY,
+                    new ParameterizedTypeReference<JsonNode>() {
+                    });
+            if (pointTransactions.getBody() != null)
+                return objectMapper.readValue(pointTransactions.getBody().traverse(), new TypeReference<>() {
+                });
+            throw new BusinessException("Unknown error while retrieve user points transactions! with partyId %s");
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Unknown error while retrieve user points transactions! with partyId %s");
+            throw new BusinessException("Unknown error while retrieve user points transactions! with partyId %s");
         }
     }
 

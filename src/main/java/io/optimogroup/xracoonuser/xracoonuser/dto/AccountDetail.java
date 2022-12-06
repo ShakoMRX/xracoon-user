@@ -16,5 +16,4 @@ public class AccountDetail {
     private MoneyDTO amountOfGel;
     private PointsDTO amountOfPoint;
     private AmountOfSpentPoints amountOfSpentPoints;
-    private List<PointsTransactionDTO> pointsTransactions;
 }
