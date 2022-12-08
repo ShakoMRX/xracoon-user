@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 @AllArgsConstructor
 public class UserDTO {
 
-    private UserDetailsDTO details;
+    private UserDetailsResponseDTO details;
+
+    private UserAvatarDTO avatar;
 
     private AccountDetail accountDetail;
 

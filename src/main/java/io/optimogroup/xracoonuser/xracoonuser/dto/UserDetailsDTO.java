@@ -1,5 +1,6 @@
 package io.optimogroup.xracoonuser.xracoonuser.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.optimogroup.xracoon.shared.registry.client.models.ContactInfoDto;
@@ -28,8 +29,11 @@ public class UserDetailsDTO implements Serializable {
     private String personalId;
     private Long legalAddressId;
     private Long physicalAddressId;
-    private List<ContactInfoDto> contactInfos;
+    private List<ContactDTO> contactInfos;
     private String objectType;
     private String registryType;
+    private String personDob;
+//    @JsonIgnore
+    private String uuid;
 
 }

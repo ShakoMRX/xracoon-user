@@ -2,6 +2,8 @@ package io.optimogroup.xracoonuser.xracoonuser.controller;
 
 import io.optimogroup.xracoon.shared.models.BaseException;
 import io.optimogroup.xracoonuser.xracoonuser.dto.RatingDto;
+import io.optimogroup.xracoonuser.xracoonuser.dto.UserDetailsDTO;
+import io.optimogroup.xracoonuser.xracoonuser.exception.BadRequestException;
 import io.optimogroup.xracoonuser.xracoonuser.repository.RatingRepository;
 import io.optimogroup.xracoonuser.xracoonuser.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,21 @@ public class UserController {
         return new ResponseEntity<>(userService.getUserPointTransactions(partyId), HttpStatus.OK);
     }
 
+    @PutMapping("{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id,
+                                        @RequestBody UserDetailsDTO userDetail) {
+        if (id == null) throw new BadRequestException("Invalid user id provided!");
+        userService.updateUser(id, userDetail);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("upload-avatar")
+    public ResponseEntity<?> uploadAvatar(
+            @RequestParam Long userId,
+            @RequestParam String path, @RequestParam String colorCode) {
+        return new ResponseEntity<>(userService.uploadAvatar(userId, path, colorCode), HttpStatus.OK);
+    }
+
     @PostMapping
     public void saveRating(@RequestBody RatingDto ratingDto) {
         repository.save(ratingDto);
@@ -38,7 +55,7 @@ public class UserController {
 
     @GetMapping
     private List<RatingDto> get() {
-       return repository.findAll();
+        return repository.findAll();
     }
 
 }

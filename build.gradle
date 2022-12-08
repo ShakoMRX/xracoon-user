@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.optimogroup.xracoon-user'
-version = '0.0.5-SNAPSHOT'
+version = '0.0.15-SNAPSHOT'
 sourceCompatibility = '17'
 
 repositories {
