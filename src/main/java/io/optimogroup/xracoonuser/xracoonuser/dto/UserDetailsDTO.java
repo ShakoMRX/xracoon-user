@@ -1,12 +1,6 @@
 package io.optimogroup.xracoonuser.xracoonuser.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.optimogroup.xracoon.shared.registry.client.models.ContactInfoDto;
-import io.optimogroup.xracoon.shared.registry.client.models.OrgLegalFormDto;
-import io.optimogroup.xracoon.shared.registry.client.models.RegistryTypeDto;
-import io.optimogroup.xracoon.shared.registry.client.models.TaxationPolicyDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,6 +24,9 @@ public class UserDetailsDTO implements Serializable {
     private Long legalAddressId;
     private Long physicalAddressId;
     private List<ContactDTO> contactInfos;
+    private UserAddressDTO userAddress;
+    private AddressDTO legalAddress;
+    private AddressDTO physicalAddress;
     private String objectType;
     private String registryType;
     private String personDob;

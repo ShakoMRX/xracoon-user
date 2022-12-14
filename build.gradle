@@ -6,16 +6,16 @@ plugins {
 }
 
 group = 'io.optimogroup.xracoon-user'
-version = '0.0.15-SNAPSHOT'
+version = '0.0.27-SNAPSHOT'
 sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
     mavenLocal()
-    maven {
-        url 'http://35.156.90.23:8080/repository/racoon/'
-        allowInsecureProtocol = true
-    }
+//    maven {
+//        url 'http://35.156.90.23:8080/repository/racoon/'
+//        allowInsecureProtocol = true
+//    }
 }
 
 dependencies {
@@ -38,17 +38,17 @@ dependencies {
 //    annotationProcessor 'org.hibernate:hibernate-jpamodelgen'
     runtimeOnly 'com.oracle.database.jdbc:ojdbc8'
     annotationProcessor 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test',
-            implementation('io.optimogroup.xracoon.shared:xracoon-shared-models:0.0.5-SNAPSHOT') {
-                changing = true
-            }
+//    testImplementation 'org.springframework.boot:spring-boot-starter-test',
+//            implementation('io.optimogroup.xracoon.shared:xracoon-shared-models:0.0.5-SNAPSHOT') {
+//                changing = true
+//            }
     implementation 'org.springframework.boot:spring-boot-starter-data-redis:3.0.0'
     implementation 'redis.clients:jedis:4.3.1'
-    implementation('io.optimogroup.xracoon.shared.s3:xracoon-s3-shared-client:0.0.6-SNAPSHOT') {
-        changing = true
-    }
+//    implementation('io.optimogroup.xracoon.shared.s3:xracoon-s3-shared-client:0.0.6-SNAPSHOT') {
+//        changing = true
+//    }
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation('io.optimogroup.xracoon.shared.registry:xracoon-registry-shared-client:0.0.5-SNAPSHOT')
+    //implementation('io.optimogroup.xracoon.shared.registry:xracoon-registry-shared-client:0.0.5-SNAPSHOT')
 }
 
 def getDockerLoginCommand = {

@@ -21,4 +21,6 @@ public class User {
     @Column(name = "PARTY_ID")
     private Long partyId;
 
+    @Column(name = "ATTACHMENT_ID")
+    private Long attachmentId;
 }

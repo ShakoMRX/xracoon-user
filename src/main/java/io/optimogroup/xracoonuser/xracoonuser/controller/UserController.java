@@ -1,6 +1,5 @@
 package io.optimogroup.xracoonuser.xracoonuser.controller;
 
-import io.optimogroup.xracoon.shared.models.BaseException;
 import io.optimogroup.xracoonuser.xracoonuser.dto.RatingDto;
 import io.optimogroup.xracoonuser.xracoonuser.dto.UserDetailsDTO;
 import io.optimogroup.xracoonuser.xracoonuser.exception.BadRequestException;
@@ -24,7 +23,7 @@ public class UserController {
 
 
     @GetMapping("detail-info")
-    public ResponseEntity<?> getUserDetailInfo() throws BaseException, IOException {
+    public ResponseEntity<?> getUserDetailInfo() throws IOException {
         return new ResponseEntity<>(userService.getUserDetails(), HttpStatus.OK);
     }
 
@@ -46,6 +45,11 @@ public class UserController {
             @RequestParam Long userId,
             @RequestParam String path, @RequestParam String colorCode) {
         return new ResponseEntity<>(userService.uploadAvatar(userId, path, colorCode), HttpStatus.OK);
+    }
+
+    @GetMapping("get-user-avatar/{partyId}")
+    public ResponseEntity<?> getUserAvatar(@PathVariable Long partyId) {
+        return new ResponseEntity<>(userService.getUserAvatar(partyId), HttpStatus.OK);
     }
 
     @PostMapping

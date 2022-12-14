@@ -3,13 +3,15 @@ package io.optimogroup.xracoonuser.xracoonuser.service.user;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.optimogroup.xracoon.shared.models.BaseException;
-import io.optimogroup.xracoon.shared.s3.client.exception.BadRequestException;
+//import com.fasterxml.jackson.databind.node.ObjectNode;
+//import io.optimogroup.xracoon.shared.models.BaseException;
+//import io.optimogroup.xracoon.shared.s3.client.exception.BadRequestException;
 import io.optimogroup.xracoonuser.xracoonuser.Utils.RequestUtils;
 import io.optimogroup.xracoonuser.xracoonuser.dto.*;
 import io.optimogroup.xracoonuser.xracoonuser.exception.BusinessException;
+import io.optimogroup.xracoonuser.xracoonuser.model.Attachment;
 import io.optimogroup.xracoonuser.xracoonuser.model.User;
+import io.optimogroup.xracoonuser.xracoonuser.repository.AttachmentRepository;
 import io.optimogroup.xracoonuser.xracoonuser.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +23,6 @@ import org.springframework.http.HttpMethod;
 //import org.springframework.security.core.context.SecurityContextHolder;
 //import org.springframework.security.oauth2.jwt.Jwt;
 //import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -33,6 +34,7 @@ import org.webjars.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +58,8 @@ public class UserServiceImpl implements UserService {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
+    private final AttachmentRepository attachmentRepository;
+
     @Override
     public User get(Long userId) {
         return userRepository.findById(userId)
@@ -74,17 +78,32 @@ public class UserServiceImpl implements UserService {
         return userId;
     }
 
+    public User getByPartyId(Long partyId) {
+        if (partyId == null) throw new BusinessException("Invalid partyId provided!");
+        return userRepository.findByPartyId(partyId);
+    }
+
     @Override
     public UserDTO getUserDetails() {
         UserDTO userDTO = new UserDTO();
         try {
             Long partyId = getUserDetailsFromRegistry(userDTO);
+            User user = getByPartyId(partyId);
+            if (user.getAttachmentId() != null) {
+                Attachment attachment = attachmentRepository.findById(user.getAttachmentId())
+                        .orElseThrow(() -> new NotFoundException("Attachments not found!"));
+                userDTO.setAvatar(UserAvatarDTO.builder()
+                        .path(attachment.getPath())
+                        .code(attachment.getColorCode())
+                        .build());
+            } else {
+                userDTO.setAvatar(UserAvatarDTO.builder()
+                        .path("2")
+                        .code("#F44336")
+                        .build());
+            }
             AccountDetail accountDetail = getAccountingDetails(partyId);
             userDTO.setAccountDetail(accountDetail);
-            userDTO.setAvatar(UserAvatarDTO.builder()
-                    .path("2")
-                    .code("#F44336")
-                    .build());
             return userDTO;
         } catch (Exception e) {
             e.printStackTrace();
@@ -128,18 +147,31 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserAvatarDTO uploadAvatar(Long userId, String path, String code) {
         User user = get(userId);
-        if (userId != null) throw new BusinessException("Invalid userId provided!");
+        if (userId == null) throw new BusinessException("Invalid userId provided!");
         if (path.isEmpty() || code.isEmpty()) throw new BusinessException("Invalid parameters provided!");
-        return UserAvatarDTO.builder()
-                .code(code)
-                .path(path)
-                .build();
+        try {
+            Attachment attachment = new Attachment();
+            attachment.setPath(path);
+            attachment.setColorCode(code);
+            Attachment savedAtt = attachmentRepository.save(attachment);
+            user.setAttachmentId(savedAtt.getId());
+            userRepository.save(user);
+            return UserAvatarDTO.builder()
+                    .code(code)
+                    .path(path)
+                    .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Unknown error while add avatar for user userId= %s ".formatted(userId));
+            throw new BusinessException("Unknown error while add avatar for user userId= %s ".formatted(userId));
+        }
     }
 
     @Override
     public void updateUser(Long id, UserDetailsDTO detailsDTO) {
+        if (detailsDTO.getPersonalId().length() != 11)
+            throw new BusinessException("Personal Id must be with 11 digits!");
         try {
-
             User user = get(id);
             Long partyId = user.getPartyId();
             String uuId = user.getUserUuid();
@@ -173,37 +205,79 @@ public class UserServiceImpl implements UserService {
                     });
             int statusCode = res.getStatusCode().value();
             if (statusCode == 200 || statusCode == 201 && contacts.size() > 0) {
-                var nCRes = RequestUtils.ServiceCall(
-                        log,
-                        restTemplate,
-                        objectMapper,
-                        "get userDetails",
-                        urlRegistry
-                                .encode()
-                                .toUriString() + "/" + partyId + "/contact-info",
-                        HttpMethod.PUT,
-                        new HttpEntity<>(newContracts),
-                        new ParameterizedTypeReference<JsonNode>() {
-                        });
-                for (ContactDTO exContact : existingContacts) {
-                    var exCRes = RequestUtils.ServiceCall(
-                            log,
-                            restTemplate,
-                            objectMapper,
-                            "get userDetails",
-                            urlRegistry
-                                    .encode()
-                                    .toUriString() + "/" + partyId + "/contact-info/" + exContact.getId(),
-                            HttpMethod.PUT,
-                            new HttpEntity<>(exContact),
-                            new ParameterizedTypeReference<JsonNode>() {
-                            });
-                }
+                updateNewContacts(urlRegistry, partyId, id, newContracts);
+                updateExistingContacts(urlRegistry, partyId, id, existingContacts);
+                updateUserAddresses(urlRegistry, partyId, id, detailsDTO.getUserAddress());
             }
         } catch (Exception e) {
             e.printStackTrace();
             log.error("error while update user with id %s !".formatted(id));
             throw new BusinessException("error while update user with id %s !".formatted(id));
+        }
+    }
+
+
+    public void updateNewContacts(UriComponentsBuilder urlRegistry,
+                                  long partyId,
+                                  long id,
+                                  List<ContactDTO> newContracts) {
+        var nCRes = RequestUtils.ServiceCall(
+                log,
+                restTemplate,
+                objectMapper,
+                "get userDetails",
+                urlRegistry
+                        .encode()
+                        .toUriString() + "/" + partyId + "/contact-info",
+                HttpMethod.POST,
+                new HttpEntity<>(newContracts),
+                new ParameterizedTypeReference<JsonNode>() {
+                });
+        if (nCRes.getStatusCode().value() == 200)
+            log.info("successfully created contacts for user id = %s ".formatted(id));
+    }
+
+    public void updateUserAddresses(UriComponentsBuilder urlRegistry,
+                                    long partyId,
+                                    long id,
+                                    UserAddressDTO userAddress) {
+        if (userAddress != null) {
+            var adRes = RequestUtils.ServiceCall(
+                    log,
+                    restTemplate,
+                    objectMapper,
+                    "get userDetails",
+                    urlRegistry
+                            .encode()
+                            .toUriString() + "/" + partyId + "/addresses",
+                    HttpMethod.POST,
+                    new HttpEntity<>(userAddress),
+                    new ParameterizedTypeReference<JsonNode>() {
+                    });
+            if (adRes.getStatusCode().value() == 200)
+                log.info("successfully updated addresses for user id = %s ".formatted(id));
+        }
+    }
+
+    public void updateExistingContacts(UriComponentsBuilder urlRegistry,
+                                       long partyId,
+                                       long id,
+                                       List<ContactDTO> existingContacts) {
+        for (ContactDTO exContact : existingContacts) {
+            var exCRes = RequestUtils.ServiceCall(
+                    log,
+                    restTemplate,
+                    objectMapper,
+                    "get userDetails",
+                    urlRegistry
+                            .encode()
+                            .toUriString() + "/" + partyId + "/contact-info/" + exContact.getId(),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(exContact),
+                    new ParameterizedTypeReference<JsonNode>() {
+                    });
+            if (exCRes.getStatusCode().value() == 200)
+                log.info("successfully updated contacts for user id = %s ".formatted(id));
         }
     }
 
@@ -233,20 +307,7 @@ public class UserServiceImpl implements UserService {
                     .treeToValue(userDetailsFromRegistryResponse.getBody(), UserDetailsDTO.class);
             if (statusCode == 200 || statusCode == 201) {
                 User user = saveUser(userDetailsDTO);
-                userDTO.setDetails(UserDetailsResponseDTO
-                        .builder()
-                        .id(user.getId())
-                        .objectType(userDetailsDTO.getObjectType())
-                        .personalId(userDetailsDTO.getPersonalId())
-                        .legalAddressId(userDetailsDTO.getLegalAddressId())
-                        .gender(userDetailsDTO.getGender())
-                        .contactInfos(userDetailsDTO.getContactInfos())
-                        .firstName(userDetailsDTO.getFirstName())
-                        .lastName(userDetailsDTO.getLastName())
-                        .registryType(userDetailsDTO.getRegistryType())
-                        .physicalAddressId(userDetailsDTO.getPhysicalAddressId())
-                        .build()
-                );
+                userDTO.setDetails(mapDetailsToResponseDto(userDetailsDTO, user.getId()));
                 return userDetailsDTO.getId();
             }
             throw new BusinessException("Invalid user Provided!");
@@ -255,6 +316,25 @@ public class UserServiceImpl implements UserService {
             log.info("Error while retrieve UserDetails from registry!");
             throw new BusinessException(e.getMessage());
         }
+    }
+
+    public UserDetailsResponseDTO mapDetailsToResponseDto(UserDetailsDTO userDetailsDTO, long userId) {
+        return UserDetailsResponseDTO
+                .builder()
+                .id(userId)
+                .objectType(userDetailsDTO.getObjectType())
+                .personalId(userDetailsDTO.getPersonalId())
+                .legalAddressId(userDetailsDTO.getLegalAddressId())
+                .gender(userDetailsDTO.getGender())
+                .contactInfos(userDetailsDTO.getContactInfos())
+                .firstName(userDetailsDTO.getFirstName())
+                .lastName(userDetailsDTO.getLastName())
+                .registryType(userDetailsDTO.getRegistryType())
+                .physicalAddressId(userDetailsDTO.getPhysicalAddressId())
+                .personDob(userDetailsDTO.getPersonDob())
+                .physicalAddress(userDetailsDTO.getPhysicalAddress())
+                .legalAddress(userDetailsDTO.getLegalAddress())
+                .build();
     }
 
     public AccountDetail getAccountingDetails(Long partyId) {
@@ -292,12 +372,14 @@ public class UserServiceImpl implements UserService {
                 String uuId = UserDetailsDTO.getUuid();
                 if (uuId.isEmpty()) throw new BusinessException("Invalid user uuId provided!");
                 if (UserDetailsDTO.getId() == null) throw new BusinessException("Invalid user partyId provided!");
+                Long partyId = UserDetailsDTO.getId();
                 user.setUserUuid(uuId);
-                user.setPartyId(UserDetailsDTO.getId());
-                if (!userRepository.existsByUserUuid(uuId))
+                user.setPartyId(partyId);
+                if (!userRepository.existsByPartyId(partyId)) {
+                    user.setAttachmentId(1L); // default
                     return userRepository.save(user);
-                else {
-                    User existingUser = userRepository.findByUserUuid(uuId);
+                } else {
+                    User existingUser = userRepository.findByPartyId(partyId);
                     existingUser.setPartyId(UserDetailsDTO.getId());
                     return userRepository.save(existingUser);
                 }
@@ -307,6 +389,29 @@ public class UserServiceImpl implements UserService {
             e.printStackTrace();
             throw new BusinessException("Unknown error while generate user info!");
         }
+    }
+
+    @Override
+    public UserAvatarDTO getUserAvatar(Long partyId) {
+        try {
+            if (partyId == null) throw new BusinessException("Invalid user Id provided from registry!");
+            User user = userRepository.findByPartyId(partyId);
+            if (user.getAttachmentId() == null)
+                throw new BusinessException("User has not avatar , please configure avatar from userProfile");
+            Optional<Attachment> avatarDTO = attachmentRepository.findById(user.getAttachmentId());
+            if (avatarDTO.isPresent()) {
+                return UserAvatarDTO.builder()
+                        .path(avatarDTO.get().getPath())
+                        .code(avatarDTO.get().getColorCode())
+                        .build();
+            } else
+                throw new BusinessException("Unknown Error while retrieve user from registry!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Unknown error while retrieve user id from registry!");
+            throw new BusinessException("Unknown error while retrieve user id from registry!");
+        }
+
     }
 
 }

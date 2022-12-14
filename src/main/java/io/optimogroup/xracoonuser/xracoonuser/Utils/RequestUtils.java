@@ -1,7 +1,7 @@
 package io.optimogroup.xracoonuser.xracoonuser.Utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.optimogroup.xracoon.shared.models.BaseException;
+//import io.optimogroup.xracoon.shared.models.BaseException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,7 +27,7 @@ public class RequestUtils {
 
     public static <T> ResponseEntity<T> ServiceCall(Logger log, RestTemplate restTemplate, ObjectMapper objectMapper, String action, String url, HttpMethod method,
                                                     HttpEntity<?> requestEntity, ParameterizedTypeReference<T> responseType,
-                                                    Object... uriVariables) throws BaseException {
+                                                    Object... uriVariables)  {
 
         log.debug("call api action={} url={} uriVariables={}", action, url, uriVariables);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

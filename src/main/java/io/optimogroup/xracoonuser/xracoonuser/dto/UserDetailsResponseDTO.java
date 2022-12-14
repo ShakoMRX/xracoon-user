@@ -1,6 +1,6 @@
 package io.optimogroup.xracoonuser.xracoonuser.dto;
 
-import io.optimogroup.xracoon.shared.registry.client.models.ContactInfoDto;
+//import io.optimogroup.xracoon.shared.registry.client.models.ContactInfoDto;
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,7 +18,10 @@ public class UserDetailsResponseDTO {
     private Long legalAddressId;
     private Long physicalAddressId;
     private List<ContactDTO> contactInfos;
+    private AddressDTO legalAddress;
+    private AddressDTO physicalAddress;
     private String objectType;
+    private String personDob;
     private String registryType;
 
 }
