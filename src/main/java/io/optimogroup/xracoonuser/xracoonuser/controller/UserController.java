@@ -52,6 +52,11 @@ public class UserController {
         return new ResponseEntity<>(userService.getUserAvatar(partyId), HttpStatus.OK);
     }
 
+    @GetMapping("get-user-vouchers")
+    public ResponseEntity<?> getUserVouchers() {
+        return new ResponseEntity<>(userService.getUserVouchers(), HttpStatus.OK);
+    }
+
     @PostMapping
     public void saveRating(@RequestBody RatingDto ratingDto) {
         repository.save(ratingDto);

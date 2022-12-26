@@ -2,10 +2,7 @@ package io.optimogroup.xracoonuser.xracoonuser.service.user;
 
 
 //import io.optimogroup.xracoon.shared.models.BaseException;
-import io.optimogroup.xracoonuser.xracoonuser.dto.PointsTransactionDTO;
-import io.optimogroup.xracoonuser.xracoonuser.dto.UserAvatarDTO;
-import io.optimogroup.xracoonuser.xracoonuser.dto.UserDTO;
-import io.optimogroup.xracoonuser.xracoonuser.dto.UserDetailsDTO;
+import io.optimogroup.xracoonuser.xracoonuser.dto.*;
 import io.optimogroup.xracoonuser.xracoonuser.model.User;
 
 import java.io.IOException;
@@ -27,4 +24,6 @@ public interface UserService {
     void updateUser(Long id, UserDetailsDTO detailsDTO);
 
     UserAvatarDTO getUserAvatar(Long partyId);
+
+    List<VoucherInfoForUserDTO> getUserVouchers();
 }

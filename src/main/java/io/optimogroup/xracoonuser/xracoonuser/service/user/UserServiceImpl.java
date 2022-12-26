@@ -414,4 +414,32 @@ public class UserServiceImpl implements UserService {
 
     }
 
+    @Override
+    public List<VoucherInfoForUserDTO> getUserVouchers() {
+        try {
+            UriComponentsBuilder accountingUriBuilder = UriComponentsBuilder
+                    .fromHttpUrl(accountingHost + "/" + accountingUri);
+            var vouchers = RequestUtils.ServiceCall(
+                    log,
+                    restTemplate,
+                    objectMapper,
+                    "get user vouchers",
+                    accountingUriBuilder
+                            .encode()
+                            .toUriString() + "/vouchers/get-user-vouchers/",
+                    HttpMethod.GET,
+                    HttpEntity.EMPTY,
+                    new ParameterizedTypeReference<JsonNode>() {
+                    });
+            if (vouchers.getBody() != null)
+                return objectMapper.readValue(vouchers.getBody().traverse(), new TypeReference<>() {
+                });
+            throw new BusinessException("Unknown error while retrieve user vouchers");
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Unknown error while retrieve user vouchers!");
+            throw new BusinessException("Unknown error while retrieve user vouchers");
+        }
+    }
+
 }
