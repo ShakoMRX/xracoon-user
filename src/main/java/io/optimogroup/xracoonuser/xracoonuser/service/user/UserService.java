@@ -25,5 +25,7 @@ public interface UserService {
 
     UserAvatarDTO getUserAvatar(Long partyId);
 
+    UserAvatarDTO getAuthUserAvatar();
+
     List<VoucherInfoForUserDTO> getUserVouchers();
 }

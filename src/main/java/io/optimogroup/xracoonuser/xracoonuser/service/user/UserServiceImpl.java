@@ -286,6 +286,36 @@ public class UserServiceImpl implements UserService {
 //
 //    }
 
+    public AuthUserDTO getAuthUser() {
+        try {
+            UriComponentsBuilder urlRegistry = UriComponentsBuilder
+                    .fromHttpUrl(hostForRegistry + "/" + uriForRegistry);
+            var userDetailsFromRegistryResponse = RequestUtils.ServiceCall(
+                    log,
+                    restTemplate,
+                    objectMapper,
+                    "get userDetails",
+                    urlRegistry
+                            .encode()
+                            .toUriString() + "/user-id",
+                    HttpMethod.GET,
+                    HttpEntity.EMPTY,
+                    new ParameterizedTypeReference<JsonNode>() {
+                    });
+            int statusCode = userDetailsFromRegistryResponse.getStatusCode().value();
+            AuthUserDTO userDetailsDTO = objectMapper
+                    .treeToValue(userDetailsFromRegistryResponse.getBody(), AuthUserDTO.class);
+            if (statusCode == 200 || statusCode == 201) {
+                return userDetailsDTO;
+            }
+            throw new BusinessException("Invalid user Provided!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Error while retrieve UserDetails from registry!");
+            throw new BusinessException(e.getMessage());
+        }
+    }
+
     public Long getUserDetailsFromRegistry(UserDTO userDTO) {
         try {
             UriComponentsBuilder urlRegistry = UriComponentsBuilder
@@ -391,21 +421,40 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    UserAvatarDTO getAvatar(Long attId) {
+        if (attId == null)
+            throw new BusinessException("User has not avatar , please configure avatar from userProfile");
+        Optional<Attachment> avatarDTO = attachmentRepository.findById(attId);
+        if (avatarDTO.isPresent()) {
+            return UserAvatarDTO.builder()
+                    .path(avatarDTO.get().getPath())
+                    .code(avatarDTO.get().getColorCode())
+                    .build();
+        } else
+            throw new BusinessException("Unknown Error while retrieve user from registry!");
+    }
+
     @Override
     public UserAvatarDTO getUserAvatar(Long partyId) {
         try {
             if (partyId == null) throw new BusinessException("Invalid user Id provided from registry!");
             User user = userRepository.findByPartyId(partyId);
-            if (user.getAttachmentId() == null)
-                throw new BusinessException("User has not avatar , please configure avatar from userProfile");
-            Optional<Attachment> avatarDTO = attachmentRepository.findById(user.getAttachmentId());
-            if (avatarDTO.isPresent()) {
-                return UserAvatarDTO.builder()
-                        .path(avatarDTO.get().getPath())
-                        .code(avatarDTO.get().getColorCode())
-                        .build();
-            } else
-                throw new BusinessException("Unknown Error while retrieve user from registry!");
+            return getAvatar(user.getAttachmentId());
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.info("Unknown error while retrieve user id from registry!");
+            throw new BusinessException("Unknown error while retrieve user id from registry!");
+        }
+
+    }
+
+    @Override
+    public UserAvatarDTO getAuthUserAvatar() {
+        Long partyId = getAuthUser().getId();
+        try {
+            if (partyId == null) throw new BusinessException("Invalid user Id provided from registry!");
+            User user = userRepository.findByPartyId(partyId);
+            return getAvatar(user.getAttachmentId());
         } catch (Exception e) {
             e.printStackTrace();
             log.info("Unknown error while retrieve user id from registry!");

@@ -43,7 +43,8 @@ public class UserController {
     @PostMapping("upload-avatar")
     public ResponseEntity<?> uploadAvatar(
             @RequestParam Long userId,
-            @RequestParam String path, @RequestParam String colorCode) {
+            @RequestParam String path,
+            @RequestParam String colorCode) {
         return new ResponseEntity<>(userService.uploadAvatar(userId, path, colorCode), HttpStatus.OK);
     }
 
@@ -55,6 +56,11 @@ public class UserController {
     @GetMapping("get-user-vouchers")
     public ResponseEntity<?> getUserVouchers() {
         return new ResponseEntity<>(userService.getUserVouchers(), HttpStatus.OK);
+    }
+
+    @GetMapping("get-auth-user-avatar")
+    public ResponseEntity<?> getAuthUserAvatar() {
+        return new ResponseEntity<>(userService.getAuthUserAvatar(), HttpStatus.OK);
     }
 
     @PostMapping
